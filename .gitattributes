@@ -1,0 +1,2 @@
+data/DepotDownloader filter=lfs diff=lfs merge=lfs -text
+data/Decompiler filter=lfs diff=lfs merge=lfs -text
