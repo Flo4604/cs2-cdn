@@ -1,0 +1,1 @@
+{ "dependencies": { "@doctormckay/stdlib": "^2.10.0", "adm-zip": "^0.5.12", "vpk": "^0.2.0", "winston": "^3.12.0" } }

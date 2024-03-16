@@ -1,0 +1,57 @@
+name: Extract all the images from cs2
+
+# extract images whenever we push to main, run it manually, or every day at midnight
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run JavaScript file
+        run: bun run src/index.js
+
+      - name: Fix Paths
+        run: |
+          find ./data/ -type f -name '*_png.png' -exec sh -c 'mv "$1" "$(dirname "$1")/$(basename "$1" _png.png).png"' sh {} \;
+
+      - name: Commit Files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Push Files
+          file_pattern: "data/scripts/items/items_game.txt data/.DepotDownloader data/Decompiler data/DepotDownloader data/libSkiaSharp.so"
+          commit_user_name: "Flo4604 (via GitHub Actions)"
+
+      - name: S3 Upload Folder
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.R2_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_S3_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          SOURCE_DIR: "./data/panorama/images/econ"
+          DEST_DIR: "econ"
