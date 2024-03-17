@@ -56,4 +56,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_S3_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           SOURCE_DIR: "./data/panorama/images/econ"
-          DEST_DIR: "./econ"
+          DEST_DIR: "econ"
