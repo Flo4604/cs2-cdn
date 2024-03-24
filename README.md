@@ -1,4 +1,4 @@
-# Cs2-cdn
+# CS2-CDN A easy way to access CS2 images.
 
 A simple script, which downloads all cs2 files and extracts their all images for 
 - Stickers
