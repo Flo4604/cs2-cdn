@@ -17,4 +17,4 @@ You can view the images via `https://cs2cdn.com/` + ItemPath
 
 For Example: https://cs2cdn.com/econ/status_icons/service_medal_2024_lvl1.png
 
-You can get the item paths by using the items_game.txt which is also stored in this repository. See [https://github.com/Flo4604/Cs2-cdn/blob/main/data/scripts/items/items_game.txt](here)
+You can get the item paths by using the items_game.txt which is also stored in this repository. See [Here](https://github.com/Flo4604/Cs2-cdn/blob/main/data/scripts/items/items_game.txt)
