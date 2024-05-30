@@ -3,12 +3,12 @@ name: Extract all the images from cs2
 # extract images whenever we push to main, run it manually, or every day at midnight
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 3 * * *"
   workflow_dispatch:
 
 jobs:
   extract:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the
