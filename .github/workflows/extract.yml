@@ -8,7 +8,7 @@ on:
 
 jobs:
   extract:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the
