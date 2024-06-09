@@ -26,6 +26,9 @@ const defaultConfig = {
   tools: true,
   statusIcons: true,
   weapons: true,
+  otherWeapons: true,
+  setIcons: true,
+  seasonIcons: true,
   logLevel: "info",
   vrfBinary: "Decompiler",
   depotDownloader: "DepotDownloader",
@@ -47,6 +50,9 @@ const neededDirectories = {
   tools: `${ECON_PATH}/tools`,
   statusIcons: `${ECON_PATH}/status_icons`,
   weapons: `${ECON_PATH}/default_generated`,
+  otherWeapons: `${ECON_PATH}/weapons`,
+  seasonIcons: `${ECON_PATH}/season_icons`,
+  setIcons: `${ECON_PATH}/set_icons`
 };
 
 const neededFiles = {
