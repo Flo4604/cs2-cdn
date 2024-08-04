@@ -56,6 +56,5 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT }}
         run: |
-          s5cmd sync --delete './data/panorama/images/econ/*' 's3://cdn.cs2cdn.com/econ/'
+          s5cmd sync --delete --endpoint-url ${{ secrets.S3_ENDPOINT }} './data/panorama/images/econ/*' 's3://cdn.cs2cdn.com/econ/'
