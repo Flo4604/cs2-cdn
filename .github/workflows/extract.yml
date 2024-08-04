@@ -58,4 +58,4 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
         run: |
-          s5cmd sync --delete './data/panorama/images/econ/*' 's3://cs2cdn.com/econ/'
+          s5cmd sync --delete './data/panorama/images/econ/*' 's3://cdn.cs2cdn.com/econ/'
