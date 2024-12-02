@@ -37,11 +37,7 @@ jobs:
         run: bun install
 
       - name: Run JavaScript file
-        run: bun run src/index.js
-
-      - name: Fix Paths
-        run: |
-          find ./data/ -type f -name '*_png.png' -exec sh -c 'mv "$1" "$(dirname "$1")/$(basename "$1" _png.png).png"' sh {} \;
+        run: bun run start
 
       - name: Commit Files
         uses: stefanzweifel/git-auto-commit-action@v5

@@ -1,20 +1,43 @@
-import EventEmitter from "events";
+import EventEmitter from "node:events";
+import { readdir, rename } from "node:fs/promises";
+import { join, dirname, basename } from "node:path";
 import {
   chmodSync,
   existsSync,
   mkdirSync,
   writeFileSync,
   unlinkSync,
-} from "fs";
+} from "node:fs";
 import vpk from "vpk";
-import { exec } from "child_process";
+import { exec } from "node:child_process";
 import { HttpClient } from "@doctormckay/stdlib/http.js";
 import AdmZip from "adm-zip";
 import winston from "winston";
 import os from "node:os";
 import { pid } from "node:process";
 
-const defaultConfig = {
+interface Config {
+  directory: string;
+  updateInterval: number;
+  stickers: boolean;
+  patches: boolean;
+  graffiti: boolean;
+  characters: boolean;
+  musicKits: boolean;
+  cases: boolean;
+  tools: boolean;
+  statusIcons: boolean;
+  weapons: boolean;
+  otherWeapons: boolean;
+  setIcons: boolean;
+  seasonIcons: boolean;
+  logLevel: string;
+  vrfBinary: string;
+  depotDownloader: string;
+  fileList: string;
+}
+
+const DEFAULT_CONFIG: Config = {
   directory: "data",
   updateInterval: 30000,
   stickers: true,
@@ -40,7 +63,7 @@ const DEPOT_ID = 2347770;
 
 const ECON_PATH = "panorama/images/econ";
 
-const neededDirectories = {
+const neededDirectories: Record<string, string> = {
   stickers: `${ECON_PATH}/stickers`,
   patches: `${ECON_PATH}/patches`,
   graffiti: `${ECON_PATH}/stickers/default`,
@@ -52,24 +75,34 @@ const neededDirectories = {
   weapons: `${ECON_PATH}/default_generated`,
   otherWeapons: `${ECON_PATH}/weapons`,
   seasonIcons: `${ECON_PATH}/season_icons`,
-  setIcons: `${ECON_PATH}/set_icons`
+  setIcons: `${ECON_PATH}/set_icons`,
 };
 
-const neededFiles = {
+const neededFiles: Record<string, string> = {
   itemsGame: "scripts/items/items_game.txt",
   csgoEnglish: "resource/csgo_english.txt",
 };
 
-const fileLookup = {};
-Object.keys(neededFiles).forEach((key) => {
+const fileLookup: Record<string, number> = {};
+
+for (const key of Object.keys(neededFiles)) {
   fileLookup[neededFiles[key]] = 1;
-});
+}
 
 class Cs2CDN extends EventEmitter {
-  constructor(config = {}) {
+  private config: Config;
+  private client: HttpClient;
+  private log: winston.Logger;
+  private vpkDir: any;
+  private vpkStickerFiles: string[];
+  private vpkPatchFiles: string[];
+  private vpkStatusIconFiles: string[];
+  private weaponFiles: string[];
+
+  constructor(config: Partial<Config>) {
     super();
 
-    this.config = Object.assign(defaultConfig, config);
+    this.config = Object.assign({}, DEFAULT_CONFIG, config);
 
     this.createDataDirectory();
 
@@ -81,10 +114,9 @@ class Cs2CDN extends EventEmitter {
     });
 
     this.log = winston.createLogger({
-      level: config.logLevel,
+      level: this.config.logLevel,
       transports: [
         new winston.transports.Console({
-          colorize: true,
           format: winston.format.printf((info) => {
             return `[cs2cdn.com] ${info.level}: ${info.message}`;
           }),
@@ -95,10 +127,7 @@ class Cs2CDN extends EventEmitter {
     this.updateLoop();
   }
 
-  /**
-   * Creates the data directory specified in the config if it doesn't exist
-   */
-  createDataDirectory() {
+  createDataDirectory(): void {
     const dir = `./${this.config.directory}`;
 
     if (!existsSync(dir)) {
@@ -106,11 +135,7 @@ class Cs2CDN extends EventEmitter {
     }
   }
 
-  /**
-   * Runs the update loop at the specified config interval
-   * @return {Promise<undefined>|void}
-   */
-  updateLoop() {
+  updateLoop(): void {
     if (this.config.updateInterval > 0) {
       this.log.info(
         `Auto-updates enabled, checking for updates every ${this.config.updateInterval} seconds`,
@@ -123,7 +148,6 @@ class Cs2CDN extends EventEmitter {
     } else {
       this.log.info("Auto-updates disabled, checking if required files exist");
 
-      // Try to load the resources locally
       try {
         this.loadVPK();
       } catch (e) {
@@ -133,15 +157,7 @@ class Cs2CDN extends EventEmitter {
     }
   }
 
-  /**
-   * Retrieves and updates the sticker file directory from Valve
-   *
-   * Ensures that only the required VPK files are downloaded and that files with the same SHA1 aren't
-   * redownloaded
-   *
-   * @return {Promise<void>}
-   */
-  async update() {
+  async update(): Promise<void> {
     this.log.info("Checking for CS:GO file updates");
 
     if (!existsSync(`${this.config.directory}/${this.config.vrfBinary}`)) {
@@ -177,46 +193,69 @@ class Cs2CDN extends EventEmitter {
 
     await this.downloadVPKFiles();
 
-    const pathsToDump = Object.keys(neededDirectories)
-      .filter((f) => this.config[f] === true)
-      .map((f) => neededDirectories[f])
-      .concat(Object.keys(neededFiles).map((f) => neededFiles[f]));
-
-    // In CS:GO it was possible to just extract the image from the VPK, in CS2 this is not the case anymore
-    // to work around this, we will still download all the required VPK's but then using https://github.com/ValveResourceFormat/ValveResourceFormat
-    // we will extract the images from the VPK's directly and save them locally.
-    // With that we can then use the images to generate the file path.
-    await Promise.all(
-      pathsToDump.map(
-        (path) =>
-          new Promise((resolve, reject) => {
-            this.log.debug(`Dumping ${path}...`);
-            exec(
-              `${this.config.directory}/${this.config.vrfBinary} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d > /dev/null`,
-              (error) => {
-                if (error) {
-                  console.error(`exec error: ${error}`);
-                }
-
-                resolve();
-              },
-            );
-          }),
-      ),
-    );
+    await this.dumpFiles();
+    await this.renameFiles();
 
     this.log.info("Finished updating CS:GO files");
 
-    // exit with success
     process.exit(0);
   }
 
-  /**
-   * Returns a platform-architecture string, or unknown if it can't be determined
-   *
-   * @returns {string} Platform-architecture string
-   */
-  getPlatform() {
+  async dumpFiles() {
+    try {
+      const pathsToDump = Object.keys(neededDirectories)
+        .filter((f) => this.config[f as keyof Config] === true)
+        .map((f) => neededDirectories[f])
+        .concat(Object.keys(neededFiles).map((f) => neededFiles[f]));
+
+      await Promise.all(
+        pathsToDump.map(
+          (path) =>
+            new Promise<void>((resolve, reject) => {
+              this.log.debug(`Dumping ${path}...`);
+              exec(
+                `${this.config.directory}/${this.config.vrfBinary} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d > /dev/null`,
+                (error) => {
+                  if (error) {
+                    this.log.error("Exec error:", error);
+                  }
+
+                  resolve();
+                },
+              );
+            }),
+        ),
+      );
+    } catch (error) {
+      this.log.error("Error dumping files:", error);
+    }
+  }
+
+  async renameFiles() {
+    try {
+      const files = await readdir(this.config.directory, {
+        withFileTypes: true,
+        recursive: true,
+      });
+
+      for (const file of files) {
+        if (file.isFile() && file.name.endsWith("_png.png")) {
+          const oldPath = join(file.parentPath, file.name);
+
+          const newName = `${basename(file.name, "_png.png")}.png`;
+          const newPath = join(dirname(oldPath), newName);
+
+          await rename(`./${oldPath}`, `./${newPath}`);
+        }
+      }
+
+      this.log.info("Succesfully renamed files");
+    } catch (error) {
+      this.log.error("Error renaming files", error);
+    }
+  }
+
+  getPlatform(): string {
     const platform = os.platform();
     const architecture = os.arch();
 
@@ -254,15 +293,8 @@ class Cs2CDN extends EventEmitter {
     return `${osName}-${archName}`;
   }
 
-  /**
-   * By using the Github API request the latest tag from the given repository
-   *
-   * @param repository Repository to get the latest tag from
-   *
-   * @return {Promise<string>} Latest tag name
-   */
-  async getLatestGitTag(repository) {
-    let latestTag = await this.client.request({
+  async getLatestGitTag(repository: string): Promise<string> {
+    const latestTag = await this.client.request({
       method: "GET",
       url: `https://api.github.com/repos/${repository}/releases/latest`,
     });
@@ -271,23 +303,14 @@ class Cs2CDN extends EventEmitter {
       throw new Error(`Failed to get latest release ${latestTag.statusCode}`);
     }
 
-    return latestTag.jsonBody.tag_name;
+    return latestTag?.jsonBody?.tag_name;
   }
 
-  /**
-   * This function will download the latest binary from the given repository
-   *
-   * And extract the binary from the zip file and save it in the data directory
-   *
-   * @param repository Repository to get the latest binary from
-   *
-   * @param binaryName Name of the binary to download
-   */
-  async getBinary(repository, binaryName) {
+  async getBinary(repository: string, binaryName: string): Promise<void> {
     const latestTag = await this.getLatestGitTag(repository);
     const platform = this.getPlatform();
 
-    let binary = await this.client.request({
+    const binary = await this.client.request({
       method: "GET",
       followRedirects: true,
       url: `https://github.com/${repository}/releases/download/${latestTag}/${binaryName}-${platform}.zip`,
@@ -297,7 +320,7 @@ class Cs2CDN extends EventEmitter {
       throw new Error(`Failed to get latest release ${binary.statusCode}`);
     }
 
-    writeFileSync(`./data/${binaryName}.zip`, binary.rawBody);
+    writeFileSync(`./data/${binaryName}.zip`, binary?.rawBody);
     const zip = new AdmZip(`./data/${binaryName}.zip`);
     zip.extractAllTo("./data", true);
 
@@ -308,56 +331,43 @@ class Cs2CDN extends EventEmitter {
     }
   }
 
-  /**
-   * Downloads the latest version of https://github.com/SteamRE/DepotDownloader
-   */
-  async downloadDepotDownloader() {
+  async downloadDepotDownloader(): Promise<void> {
     await this.getBinary("SteamRE/DepotDownloader", "DepotDownloader");
   }
 
-  /**
-   * Downloads the latest version of https://github.com/ValveResourceFormat/ValveResourceFormat
-   */
-  async downloadVRF() {
+  async downloadVRF(): Promise<void> {
     await this.getBinary(
       "ValveResourceFormat/ValveResourceFormat",
       "Decompiler",
     );
   }
 
-  /**
-   * Loads the CSGO dir VPK specified in the config
-   */
-  loadVPK() {
+  loadVPK(): void {
     this.vpkDir = new vpk(`${this.config.directory}/game/csgo/pak01_dir.vpk`);
     this.vpkDir.load();
 
-    this.vpkStickerFiles = this.vpkDir.files.filter((f) =>
+    this.vpkStickerFiles = this.vpkDir.files.filter((f: string) =>
       f.startsWith(neededDirectories.stickers),
     );
 
-    this.vpkPatchFiles = this.vpkDir.files.filter((f) =>
+    this.vpkPatchFiles = this.vpkDir.files.filter((f: string) =>
       f.startsWith(neededDirectories.patches),
     );
 
-    this.vpkStatusIconFiles = this.vpkDir.files.filter((f) =>
+    this.vpkStatusIconFiles = this.vpkDir.files.filter((f: string) =>
       f.startsWith(neededDirectories.statusIcons),
     );
 
-    this.weaponFiles = this.vpkDir.files.filter((f) =>
+    this.weaponFiles = this.vpkDir.files.filter((f: string) =>
       f.startsWith(neededDirectories.weapons),
     );
   }
 
-  /**
-   * Given the CSGO VPK Directory, returns the necessary indices for the chosen options
-   * @return {Array} Necessary Sticker VPK Indices
-   */
-  getRequiredVPKFiles() {
-    const requiredIndices = {};
+  getRequiredVPKFiles(): number[] {
+    const requiredIndices: Record<string, boolean> = {};
 
     const dirs = Object.keys(neededDirectories)
-      .filter((f) => !!this.config[f])
+      .filter((f) => !!this.config[f as keyof Config])
       .map((f) => neededDirectories[f]);
 
     for (const fileName of this.vpkDir.files) {
@@ -373,28 +383,21 @@ class Cs2CDN extends EventEmitter {
     }
 
     return Object.keys(requiredIndices)
-      .map((i) => parseInt(i))
-      .sort((a, b) => a < b);
+      .map((i) => Number.parseInt(i))
+      .sort((a, b) => a - b);
   }
 
-  /**
-   * Downloads the required VPK files
-   * @return {Promise<void>}
-   */
-  async downloadVPKFiles() {
+  async downloadVPKFiles(): Promise<void> {
     this.log.debug("Computing required VPK files for selected packages");
 
     const requiredIndices = this.getRequiredVPKFiles();
 
     this.log.debug(`Downloading Required VPK files ${requiredIndices}`);
 
-    const filesToDownload = [];
+    const filesToDownload: { fileName: string; filePath: string }[] = [];
 
-    for (let index in requiredIndices) {
-      index = parseInt(index);
-
-      // pad to 3 zeroes
-      const archiveIndex = requiredIndices[index];
+    for (const index of requiredIndices) {
+      const archiveIndex = index;
       const paddedIndex =
         "0".repeat(3 - archiveIndex.toString().length) + archiveIndex;
       const fileName = `pak01_${paddedIndex}.vpk`;
@@ -413,18 +416,14 @@ class Cs2CDN extends EventEmitter {
     unlinkSync(`${this.config.directory}/${this.config.fileList}-${pid}`);
   }
 
-  /**
-   * Download the files from the filelist.txt via depotdownloader
-   * @return {Promise<void>}
-   */
-  async downloadFiles() {
+  async downloadFiles(): Promise<void> {
     return new Promise((resolve, reject) => {
       exec(
         `./${this.config.directory}/${this.config.depotDownloader} -app ${APP_ID} -depot ${DEPOT_ID} -filelist ${this.config.directory}/${this.config.fileList}-${pid} -dir ${this.config.directory} -os windows -osarch 64 max-downloads 100 -max-servers 100 --validate`,
         (error, stdout) => {
           this.log.debug(stdout);
           if (error) {
-            console.error(`exec error: ${error}`);
+            this.log.error("exec error:", error);
             reject();
           }
 

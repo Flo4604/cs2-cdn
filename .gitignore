@@ -11,6 +11,13 @@ lerna-debug.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Runtime data
+data/Decompiler
+data/DepotDownloader
+data/LICENSE
+data/filelist.txt*
+data/*.dylib
+data/game/csgo
+data/panorama*
 pids
 *.pid
 *.seed
