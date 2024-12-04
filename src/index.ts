@@ -338,7 +338,7 @@ class Cs2CDN extends EventEmitter {
   async downloadVRF(): Promise<void> {
     await this.getBinary(
       "ValveResourceFormat/ValveResourceFormat",
-      "Decompiler",
+      "cli",
     );
   }
 
