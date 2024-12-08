@@ -32,7 +32,7 @@ interface Config {
   setIcons: boolean;
   seasonIcons: boolean;
   logLevel: string;
-  vrfBinary: string;
+  source2Viewer: string;
   depotDownloader: string;
   fileList: string;
 }
@@ -53,7 +53,7 @@ const DEFAULT_CONFIG: Config = {
   setIcons: true,
   seasonIcons: true,
   logLevel: "info",
-  vrfBinary: "Decompiler",
+  source2Viewer: "Source2Viewer-CLI",
   depotDownloader: "DepotDownloader",
   fileList: "filelist.txt",
 };
@@ -93,11 +93,11 @@ class Cs2CDN extends EventEmitter {
   private config: Config;
   private client: HttpClient;
   private log: winston.Logger;
-  private vpkDir: any;
-  private vpkStickerFiles: string[];
-  private vpkPatchFiles: string[];
-  private vpkStatusIconFiles: string[];
-  private weaponFiles: string[];
+  private vpkDir: vpk;
+  private vpkStickerFiles: string[] = [];
+  private vpkPatchFiles: string[] = [];
+  private vpkStatusIconFiles: string[] = [];
+  private weaponFiles: string[] = [];
 
   constructor(config: Partial<Config>) {
     super();
@@ -160,9 +160,9 @@ class Cs2CDN extends EventEmitter {
   async update(): Promise<void> {
     this.log.info("Checking for CS:GO file updates");
 
-    if (!existsSync(`${this.config.directory}/${this.config.vrfBinary}`)) {
+    if (!existsSync(`${this.config.directory}/${this.config.source2Viewer}`)) {
       this.log.error(
-        `VRF binary not found at ${this.config.vrfBinary}, downloading...`,
+        `Source 2 Viewer not found at ${this.config.source2Viewer}, downloading...`,
       );
       await this.downloadVRF();
     }
@@ -214,7 +214,7 @@ class Cs2CDN extends EventEmitter {
             new Promise<void>((resolve, reject) => {
               this.log.debug(`Dumping ${path}...`);
               exec(
-                `${this.config.directory}/${this.config.vrfBinary} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d > /dev/null`,
+                `${this.config.directory}/${this.config.source2Viewer} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d > /dev/null`,
                 (error) => {
                   if (error) {
                     this.log.error("Exec error:", error);
@@ -306,7 +306,11 @@ class Cs2CDN extends EventEmitter {
     return latestTag?.jsonBody?.tag_name;
   }
 
-  async getBinary(repository: string, binaryName: string): Promise<void> {
+  async getBinary(
+    repository: string,
+    binaryName: string,
+    afterExtractionName?: string,
+  ): Promise<void> {
     const latestTag = await this.getLatestGitTag(repository);
     const platform = this.getPlatform();
 
@@ -326,9 +330,13 @@ class Cs2CDN extends EventEmitter {
 
     unlinkSync(`./data/${binaryName}.zip`);
 
-    if (platform !== "win32") {
-      chmodSync(`./data/${binaryName}`, "755");
-    }
+    const fileToMarkAsExec = afterExtractionName
+      ? afterExtractionName
+      : binaryName;
+
+    if (platform === "win32") return;
+
+    chmodSync(`./data/${fileToMarkAsExec}`, "755");
   }
 
   async downloadDepotDownloader(): Promise<void> {
@@ -339,6 +347,7 @@ class Cs2CDN extends EventEmitter {
     await this.getBinary(
       "ValveResourceFormat/ValveResourceFormat",
       "cli",
+      "Source2Viewer-CLI",
     );
   }
 
