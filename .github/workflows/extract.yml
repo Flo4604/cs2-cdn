@@ -43,7 +43,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Push Files
-          file_pattern: "data/scripts/items/items_game.txt data/.DepotDownloader data/Decompiler data/DepotDownloader data/libSkiaSharp.so"
+          file_pattern: "data/scripts/items/items_game.txt data/resource/csgo_english.txt data/.DepotDownloader"
           commit_user_name: "Flo4604 (via GitHub Actions)"
 
       - name: Sync files
