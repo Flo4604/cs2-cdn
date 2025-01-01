@@ -9,9 +9,9 @@ WORKDIR /app
 
 # Copy files into image
 COPY . . 
-# Install dependencies using Bun
-RUN bun install
 
+# Install dependencies using Bun
+RUN bun install --no-cache
 
 # Specify the default command to generate files
 CMD ["bun", "run", "src/index.ts"]
