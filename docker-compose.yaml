@@ -1,0 +1,7 @@
+services:
+  cs2-cdn:
+    container_name: cs2-cdn
+    image: cs2-cdn
+    restart: unless-stopped
+    volumes:
+      - /data:/app/data
