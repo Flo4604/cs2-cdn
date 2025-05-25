@@ -32,6 +32,7 @@ interface Config {
   setIcons: boolean;
   seasonIcons: boolean;
   premierSeasons: boolean;
+  tournaments: boolean;
   logLevel: string;
   source2Viewer: string;
   depotDownloader: string;
@@ -54,6 +55,7 @@ const DEFAULT_CONFIG: Config = {
   setIcons: true,
   seasonIcons: true,
   premierSeasons: true,
+  tournaments: true,
   logLevel: "info",
   source2Viewer: "Source2Viewer-CLI",
   depotDownloader: "DepotDownloader",
@@ -77,7 +79,8 @@ const neededDirectories: Record<string, string> = {
   weapons: `${ECON_PATH}/default_generated`,
   otherWeapons: `${ECON_PATH}/weapons`,
   seasonIcons: `${ECON_PATH}/season_icons`,
-  premierSeasons: `${ECON_PATH}/premier_seasons`,
+  : `${ECON_PATH}/premier_seasons`,
+  tournaments: `${ECON_PATH}/tournaments`,
   setIcons: `${ECON_PATH}/set_icons`,
 };
 
