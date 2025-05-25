@@ -79,7 +79,7 @@ const neededDirectories: Record<string, string> = {
   weapons: `${ECON_PATH}/default_generated`,
   otherWeapons: `${ECON_PATH}/weapons`,
   seasonIcons: `${ECON_PATH}/season_icons`,
-  : `${ECON_PATH}/premier_seasons`,
+  premierSeasons: `${ECON_PATH}/premier_seasons`,
   tournaments: `${ECON_PATH}/tournaments`,
   setIcons: `${ECON_PATH}/set_icons`,
 };
