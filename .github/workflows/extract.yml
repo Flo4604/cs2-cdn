@@ -28,16 +28,44 @@ jobs:
 
       - run: git lfs pull
 
+      - name: Cache DepotDownloader files
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/.DepotDownloader
+            data/game/csgo
+            data/panorama/images/econ
+          key: cs2-files-${{ hashFiles('data/.DepotDownloader/depot.config') }}
+          restore-keys: |
+            cs2-files-
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install
 
       - name: Run JavaScript file
         run: bun run start
+
+      - name: Clean up old SHA files
+        run: |
+          # Get the timestamp of the newest file
+          NEWEST=$(find data/.DepotDownloader -maxdepth 1 -type f \( -name "*.bin" -o -name "*.manifest" \) -exec stat -f "%m" {} \; | sort -rn | head -1)
+          # Remove SHA files that don't match the newest timestamp
+          find data/.DepotDownloader -maxdepth 1 -name "*.sha" -type f ! -newermt "@$NEWEST" -delete 2>/dev/null || true
+          # Also remove old bin and manifest files
+          find data/.DepotDownloader -maxdepth 1 -type f \( -name "*.bin" -o -name "*.manifest" \) ! -newermt "@$NEWEST" -delete 2>/dev/null || true
 
       - name: Commit Files
         uses: stefanzweifel/git-auto-commit-action@v5

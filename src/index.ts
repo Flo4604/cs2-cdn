@@ -33,6 +33,7 @@ interface Config {
   seasonIcons: boolean;
   premierSeasons: boolean;
   tournaments: boolean;
+  keyChains: boolean;
   logLevel: string;
   source2Viewer: string;
   depotDownloader: string;
@@ -50,6 +51,7 @@ const DEFAULT_CONFIG: Config = {
   cases: true,
   tools: true,
   statusIcons: true,
+  keyChains: true,
   weapons: true,
   otherWeapons: true,
   setIcons: true,
@@ -82,6 +84,7 @@ const neededDirectories: Record<string, string> = {
   premierSeasons: `${ECON_PATH}/premier_seasons`,
   tournaments: `${ECON_PATH}/tournaments`,
   setIcons: `${ECON_PATH}/set_icons`,
+  keyChains: `${ECON_PATH}/keychains`,
 };
 
 const neededFiles: Record<string, string> = {
@@ -99,11 +102,7 @@ class Cs2CDN extends EventEmitter {
   private config: Config;
   private client: HttpClient;
   private log: winston.Logger;
-  private vpkDir: vpk;
-  private vpkStickerFiles: string[] = [];
-  private vpkPatchFiles: string[] = [];
-  private vpkStatusIconFiles: string[] = [];
-  private weaponFiles: string[] = [];
+  private vpkDir!: vpk;
 
   constructor(config: Partial<Config>) {
     super();
@@ -155,7 +154,8 @@ class Cs2CDN extends EventEmitter {
       this.log.info("Auto-updates disabled, checking if required files exist");
 
       try {
-        this.loadVPK();
+        this.vpkDir = new vpk(`${this.config.directory}/game/csgo/pak01_dir.vpk`);
+        this.vpkDir.load();
       } catch (e) {
         this.log.warn("Needed CS:GO files not installed");
         this.update();
@@ -195,7 +195,8 @@ class Cs2CDN extends EventEmitter {
 
     this.log.debug("Loading static file resources");
 
-    this.loadVPK();
+    this.vpkDir = new vpk(`${this.config.directory}/game/csgo/pak01_dir.vpk`);
+    this.vpkDir.load();
 
     await this.downloadVPKFiles();
 
@@ -220,10 +221,14 @@ class Cs2CDN extends EventEmitter {
             new Promise<void>((resolve, reject) => {
               this.log.debug(`Dumping ${path}...`);
               exec(
-                `${this.config.directory}/${this.config.source2Viewer} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d > /dev/null`,
-                (error) => {
+                `${this.config.directory}/${this.config.source2Viewer} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d > /dev/null 2>&1`,
+                { maxBuffer: 10 * 1024 * 1024 }, // 10MB buffer
+                (error, stdout, stderr) => {
                   if (error) {
-                    this.log.error("Exec error:", error);
+                    this.log.error("Exec error:", error.message);
+                    if (stderr) {
+                      this.log.debug("stderr:", stderr.slice(0, 500)); // Only log first 500 chars
+                    }
                   }
 
                   resolve();
@@ -330,7 +335,11 @@ class Cs2CDN extends EventEmitter {
       throw new Error(`Failed to get latest release ${binary.statusCode}`);
     }
 
-    writeFileSync(`./data/${binaryName}.zip`, binary?.rawBody);
+    if (!binary.rawBody) {
+      throw new Error("Binary response body is empty");
+    }
+
+    writeFileSync(`./data/${binaryName}.zip`, new Uint8Array(binary.rawBody));
     const zip = new AdmZip(`./data/${binaryName}.zip`);
     zip.extractAllTo("./data", true);
 
@@ -357,26 +366,6 @@ class Cs2CDN extends EventEmitter {
     );
   }
 
-  loadVPK(): void {
-    this.vpkDir = new vpk(`${this.config.directory}/game/csgo/pak01_dir.vpk`);
-    this.vpkDir.load();
-
-    this.vpkStickerFiles = this.vpkDir.files.filter((f: string) =>
-      f.startsWith(neededDirectories.stickers),
-    );
-
-    this.vpkPatchFiles = this.vpkDir.files.filter((f: string) =>
-      f.startsWith(neededDirectories.patches),
-    );
-
-    this.vpkStatusIconFiles = this.vpkDir.files.filter((f: string) =>
-      f.startsWith(neededDirectories.statusIcons),
-    );
-
-    this.weaponFiles = this.vpkDir.files.filter((f: string) =>
-      f.startsWith(neededDirectories.weapons),
-    );
-  }
 
   getRequiredVPKFiles(): number[] {
     const requiredIndices: Record<string, boolean> = {};
