@@ -28,13 +28,20 @@ jobs:
 
       - run: git lfs pull
 
-      - name: Cache DepotDownloader files
-        uses: actions/cache@v4
+      - name: Cache game files
+        uses: tespkg/actions-cache@v1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT_URL }}
         with:
+          endpoint: ${{ secrets.S3_ENDPOINT_URL }}
+          bucket: cs2cdn
+          use-fallback: false
           path: |
             data/.DepotDownloader
             data/game/csgo
-            data/panorama/images/econ
           key: cs2-files-${{ hashFiles('data/.DepotDownloader/depot.config') }}
           restore-keys: |
             cs2-files-
@@ -45,8 +52,16 @@ jobs:
           bun-version: latest
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v4
+        uses: tespkg/actions-cache@v1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT_URL }}
         with:
+          endpoint: ${{ secrets.S3_ENDPOINT_URL }}
+          bucket: cs2cdn
+          use-fallback: false
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
           restore-keys: |
