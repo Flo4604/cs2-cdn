@@ -77,6 +77,24 @@ jobs:
       - name: Run JavaScript file
         run: bun run start
 
+      - name: Sync files to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+        run: |
+          s5cmd sync --delete './data/panorama/images/econ/*' 's3://cs2cdn/econ/'
+
+      - name: Clean up extracted files to save space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          # Remove extracted panorama images (already synced to S3)
+          rm -rf data/panorama/images/econ/*
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Clean up old SHA files
         run: |
           # Get the timestamp of the newest file
@@ -92,12 +110,3 @@ jobs:
           commit_message: Push Files
           file_pattern: "data/scripts/items/items_game.txt data/resource/csgo_english.txt data/.DepotDownloader"
           commit_user_name: "Flo4604 (via GitHub Actions)"
-
-      - name: Sync files
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
-        run: |
-          s5cmd sync --delete './data/panorama/images/econ/*' 's3://cs2cdn/econ/'
