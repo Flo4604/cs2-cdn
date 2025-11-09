@@ -89,8 +89,11 @@ const neededDirectories: Record<string, string> = {
 
 const neededFiles: Record<string, string> = {
   itemsGame: "scripts/items/items_game.txt",
-  csgoEnglish: "resource/csgo_english.txt",
 };
+
+const neededFilePatterns: RegExp[] = [
+  /^resource\/csgo_[^/]+\.txt$/,
+];
 
 const fileLookup: Record<string, number> = {};
 
@@ -210,10 +213,19 @@ class Cs2CDN extends EventEmitter {
 
   async dumpFiles() {
     try {
+      // Find files matching patterns
+      const patternMatchedFiles: string[] = [];
+      for (const fileName of this.vpkDir.files) {
+        if (neededFilePatterns.some((pattern) => pattern.test(fileName))) {
+          patternMatchedFiles.push(fileName);
+        }
+      }
+
       const pathsToDump = Object.keys(neededDirectories)
         .filter((f) => this.config[f as keyof Config] === true)
         .map((f) => neededDirectories[f])
-        .concat(Object.keys(neededFiles).map((f) => neededFiles[f]));
+        .concat(Object.keys(neededFiles).map((f) => neededFiles[f]))
+        .concat(patternMatchedFiles);
 
       await Promise.all(
         pathsToDump.map(
@@ -377,7 +389,8 @@ class Cs2CDN extends EventEmitter {
     for (const fileName of this.vpkDir.files) {
       if (
         dirs.some((dir) => fileName.startsWith(dir)) ||
-        fileLookup[fileName]
+        fileLookup[fileName] ||
+        neededFilePatterns.some((pattern) => pattern.test(fileName))
       ) {
         const archiveIndex = this.vpkDir.tree[fileName].archiveIndex;
         if (!requiredIndices[archiveIndex]) {

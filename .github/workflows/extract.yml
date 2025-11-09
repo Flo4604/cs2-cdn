@@ -86,6 +86,17 @@ jobs:
         run: |
           s5cmd sync --delete './data/panorama/images/econ/*' 's3://cs2cdn/econ/'
 
+      - name: Analyze disk space usage
+        run: |
+          echo "=== Top 20 largest directories in root ==="
+          du -h --max-depth=2 / 2>/dev/null | sort -rh | head -20
+          echo ""
+          echo "=== Top 20 largest directories in home ==="
+          du -h --max-depth=3 ~ 2>/dev/null | sort -rh | head -20
+          echo ""
+          echo "=== Sizes of our data directory ==="
+          du -h --max-depth=2 data 2>/dev/null | sort -rh
+
       - name: Clean up extracted files to save space
         run: |
           echo "Disk space before cleanup:"
@@ -108,5 +119,5 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Push Files
-          file_pattern: "data/scripts/items/items_game.txt data/resource/csgo_english.txt data/.DepotDownloader"
+          file_pattern: "data/scripts/items/items_game.txt data/resource/csgo_*.txt data/.DepotDownloader"
           commit_user_name: "Flo4604 (via GitHub Actions)"
