@@ -7,7 +7,7 @@ on:
 
 jobs:
   extract:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-4
 
     permissions:
       contents: write
@@ -28,23 +28,12 @@ jobs:
 
       - run: git lfs pull
 
-      - name: Extract S3 endpoint hostname
-        id: s3-endpoint
-        run: |
-          ENDPOINT="${{ secrets.S3_ENDPOINT_URL }}"
-          # Remove https:// or http:// and trailing slashes
-          ENDPOINT_HOST=$(echo "$ENDPOINT" | sed -e 's|^https\?://||' -e 's|/$||')
-          echo "host=$ENDPOINT_HOST" >> $GITHUB_OUTPUT
+      - name: Setup Depot CLI
+        uses: depot/setup-action@v1
 
       - name: Cache game files
-        uses: tespkg/actions-cache@v1
+        uses: actions/cache@v4
         with:
-          endpoint: ${{ steps.s3-endpoint.outputs.host }}
-          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          bucket: cs2cdn
-          region: ${{ secrets.AWS_REGION }}
-          use-fallback: false
           path: |
             data/.DepotDownloader
             data/game/csgo
@@ -58,14 +47,8 @@ jobs:
           bun-version: latest
 
       - name: Cache Bun dependencies
-        uses: tespkg/actions-cache@v1
+        uses: actions/cache@v4
         with:
-          endpoint: ${{ steps.s3-endpoint.outputs.host }}
-          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          bucket: cs2cdn
-          region: ${{ secrets.AWS_REGION }}
-          use-fallback: false
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
           restore-keys: |
