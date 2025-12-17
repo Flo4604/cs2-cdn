@@ -16,6 +16,9 @@ jobs:
       - name: Maximize build disk space
         uses: easimon/maximize-build-space@v10
         with:
+          root-reserve-mb: 30720
+          temp-reserve-mb: 4096
+          swap-size-mb: 1024
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
@@ -45,21 +48,16 @@ jobs:
           ENDPOINT_HOST=$(echo "$ENDPOINT" | sed -e 's|^https\?://||' -e 's|/$||')
           echo "host=$ENDPOINT_HOST" >> $GITHUB_OUTPUT
 
-      - name: Cache game files
-        uses: tespkg/actions-cache@v1
-        with:
-          endpoint: ${{ steps.s3-endpoint.outputs.host }}
-          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          bucket: cs2cdn
-          region: ${{ secrets.AWS_REGION }}
-          use-fallback: false
-          path: |
-            data/.DepotDownloader
-            data/game/csgo
-          key: cs2-files-${{ hashFiles('data/.DepotDownloader/depot.config') }}
-          restore-keys: |
-            cs2-files-
+      - name: Restore game files from S3 cache
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+        run: |
+          mkdir -p data/.DepotDownloader data/game/csgo
+          s5cmd sync 's3://cs2cdn/cache/DepotDownloader/*' './data/.DepotDownloader/' || true
+          s5cmd sync 's3://cs2cdn/cache/game/*' './data/game/csgo/' || true
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -123,6 +121,16 @@ jobs:
           find data/.DepotDownloader -maxdepth 1 -name "*.sha" -type f ! -newermt "@$NEWEST" -delete 2>/dev/null || true
           # Also remove old bin and manifest files
           find data/.DepotDownloader -maxdepth 1 -type f \( -name "*.bin" -o -name "*.manifest" \) ! -newermt "@$NEWEST" -delete 2>/dev/null || true
+
+      - name: Save game files to S3 cache
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+        run: |
+          s5cmd sync './data/.DepotDownloader/*' 's3://cs2cdn/cache/DepotDownloader/'
+          s5cmd sync './data/game/csgo/*' 's3://cs2cdn/cache/game/'
 
       - name: Commit Files
         uses: stefanzweifel/git-auto-commit-action@v5
