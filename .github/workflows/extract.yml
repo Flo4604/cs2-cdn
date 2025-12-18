@@ -123,14 +123,16 @@ jobs:
           find data/.DepotDownloader -maxdepth 1 -type f \( -name "*.bin" -o -name "*.manifest" \) ! -newermt "@$NEWEST" -delete 2>/dev/null || true
 
       - name: Save game files to S3 cache
+        continue-on-error: true
+        timeout-minutes: 30
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
         run: |
-          s5cmd sync './data/.DepotDownloader/*' 's3://cs2cdn/cache/DepotDownloader/'
-          s5cmd sync './data/game/csgo/*' 's3://cs2cdn/cache/game/'
+          s5cmd --numworkers 256 sync './data/.DepotDownloader/*' 's3://cs2cdn/cache/DepotDownloader/'
+          s5cmd --numworkers 256 sync './data/game/csgo/*' 's3://cs2cdn/cache/game/'
 
       - name: Commit Files
         uses: stefanzweifel/git-auto-commit-action@v5
