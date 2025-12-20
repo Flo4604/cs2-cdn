@@ -131,8 +131,8 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
         run: |
-          s5cmd --numworkers 16 sync './data/.DepotDownloader/*' 's3://cs2cdn/cache/DepotDownloader/'
-          s5cmd --numworkers 16 sync './data/game/csgo/*' 's3://cs2cdn/cache/game/'
+          s5cmd --numworkers 16 sync --size-only './data/.DepotDownloader/*' 's3://cs2cdn/cache/DepotDownloader/'
+          s5cmd --numworkers 16 sync --size-only './data/game/csgo/*' 's3://cs2cdn/cache/game/'
 
       - name: Commit Files
         uses: stefanzweifel/git-auto-commit-action@v5
