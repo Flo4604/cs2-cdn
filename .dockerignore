@@ -1,0 +1,7 @@
+.git/
+.github/
+data/
+node_modules/
+bun.lockb
+docker-compose.yml
+Dockerfile
