@@ -7,6 +7,7 @@ import {
   mkdirSync,
   writeFileSync,
   unlinkSync,
+  rmSync,
 } from "node:fs";
 import vpk from "vpk";
 import { exec } from "node:child_process";
@@ -185,12 +186,19 @@ class Cs2CDN extends EventEmitter {
       await this.downloadDepotDownloader();
     }
 
+    // Clear DepotDownloader cache to force fresh manifest downloads
+    const depotCacheDir = `${this.config.directory}/.DepotDownloader`;
+    if (existsSync(depotCacheDir)) {
+      this.log.info("Clearing DepotDownloader manifest cache to force fresh downloads");
+      rmSync(depotCacheDir, { recursive: true, force: true });
+    }
+
     writeFileSync(
       `${this.config.directory}/${this.config.fileList}-${pid}`,
       "game\\csgo\\pak01_dir.vpk",
     );
 
-    this.log.debug("Downloading require static files");
+    this.log.debug("Downloading required static files");
 
     await this.downloadFiles();
 
@@ -454,7 +462,7 @@ class Cs2CDN extends EventEmitter {
   async downloadFiles(): Promise<void> {
     return new Promise((resolve, reject) => {
       exec(
-        `./${this.config.directory}/${this.config.depotDownloader} -app ${APP_ID} -depot ${DEPOT_ID} -filelist ${this.config.directory}/${this.config.fileList}-${pid} -dir ${this.config.directory} -os windows -osarch 64 max-downloads 100 -max-servers 100 --validate`,
+        `./${this.config.directory}/${this.config.depotDownloader} -app ${APP_ID} -depot ${DEPOT_ID} -filelist ${this.config.directory}/${this.config.fileList}-${pid} -dir ${this.config.directory} -os windows -osarch 64 -max-downloads 100 -max-servers 100 -validate`,
         (error, stdout) => {
           this.log.debug(stdout);
           if (error) {
