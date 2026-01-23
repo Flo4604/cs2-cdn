@@ -227,28 +227,46 @@ class Cs2CDN extends EventEmitter {
         .concat(Object.keys(neededFiles).map((f) => neededFiles[f]))
         .concat(patternMatchedFiles);
 
-      await Promise.all(
+      const results = await Promise.all(
         pathsToDump.map(
           (path) =>
-            new Promise<void>((resolve, reject) => {
+            new Promise<{ path: string; success: boolean; error?: string }>((resolve) => {
               this.log.debug(`Dumping ${path}...`);
               exec(
-                `${this.config.directory}/${this.config.source2Viewer} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d > /dev/null 2>&1`,
+                `${this.config.directory}/${this.config.source2Viewer} --input data/game/csgo/pak01_dir.vpk --vpk_filepath ${path} -o data -d`,
                 { maxBuffer: 10 * 1024 * 1024 }, // 10MB buffer
                 (error, stdout, stderr) => {
                   if (error) {
-                    this.log.error("Exec error:", error.message);
+                    this.log.error(`Failed to dump ${path}: ${error.message}`);
                     if (stderr) {
-                      this.log.debug("stderr:", stderr.slice(0, 500)); // Only log first 500 chars
+                      this.log.error(`stderr for ${path}: ${stderr.slice(0, 1000)}`);
                     }
+                    resolve({ path, success: false, error: error.message });
+                    return;
                   }
 
-                  resolve();
+                  if (stderr && stderr.length > 0) {
+                    this.log.warn(`Warnings for ${path}: ${stderr.slice(0, 500)}`);
+                  }
+
+                  this.log.debug(`Successfully dumped ${path}`);
+                  resolve({ path, success: true });
                 },
               );
             }),
         ),
       );
+
+      const failed = results.filter((r) => !r.success);
+      if (failed.length > 0) {
+        this.log.error(`Failed to dump ${failed.length} paths:`);
+        for (const f of failed) {
+          this.log.error(`  - ${f.path}: ${f.error}`);
+        }
+      }
+
+      const succeeded = results.filter((r) => r.success);
+      this.log.info(`Successfully dumped ${succeeded.length}/${results.length} paths`);
     } catch (error) {
       this.log.error("Error dumping files:", error);
     }
