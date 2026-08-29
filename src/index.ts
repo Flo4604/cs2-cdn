@@ -35,6 +35,9 @@ interface Config {
   premierSeasons: boolean;
   tournaments: boolean;
   keyChains: boolean;
+  privateRanks: boolean;
+  commendations: boolean;
+  premierRanks: boolean;
   logLevel: string;
   source2Viewer: string;
   depotDownloader: string;
@@ -59,6 +62,9 @@ const DEFAULT_CONFIG: Config = {
   seasonIcons: true,
   premierSeasons: true,
   tournaments: true,
+  privateRanks: true,
+  commendations: true,
+  premierRanks: true,
   logLevel: "info",
   source2Viewer: "Source2Viewer-CLI",
   depotDownloader: "DepotDownloader",
@@ -95,6 +101,24 @@ const neededFiles: Record<string, string> = {
 const neededFilePatterns: RegExp[] = [
   /^resource\/csgo_[^/]+\.txt$/,
 ];
+
+// Private rank, commendation and Premier rank icons are not under
+// panorama/images/econ, and Valve has moved them between releases, so a fixed
+// path goes stale. These match against the VPK file list instead and the
+// directories they land in get dumped. Set the matching config flag to false
+// to skip a family.
+// The commendation icons are not named "commend" in the VPK. In game the three
+// categories are Friendly, Teaching and Leader, and the art for them is
+// smile / teacher / leader under icons/ui.
+const neededPathPatterns: Record<string, RegExp> = {
+  privateRanks: /^panorama\/images\/icons\/xp\//i,
+  commendations: /^panorama\/images\/icons\/ui\/(smile|teacher|leader)\./i,
+  premierRanks: /^panorama\/images\/icons\/ui\/premier/i,
+};
+
+// Everything under here is written to data/icon-manifest.txt on each run so the
+// real paths are visible without opening the VPK by hand.
+const ICON_MANIFEST_PATTERN = /^panorama\/images\/icons\//i;
 
 const fileLookup: Record<string, number> = {};
 
@@ -219,6 +243,61 @@ class Cs2CDN extends EventEmitter {
     process.exit(0);
   }
 
+  // Dump every panorama icon path we can see to a text file. One run of this
+  // gives the exact folder names, which saves guessing when Valve renames one.
+  writeIconManifest() {
+    const icons = this.vpkDir.files
+      .filter((f: string) => ICON_MANIFEST_PATTERN.test(f))
+      .sort();
+
+    writeFileSync(
+      `${this.config.directory}/icon-manifest.txt`,
+      icons.join("\n"),
+    );
+
+    this.log.info(
+      `Wrote ${icons.length} panorama icon paths to ${this.config.directory}/icon-manifest.txt`,
+    );
+  }
+
+  matchesEnabledPathPattern(fileName: string): boolean {
+    return Object.keys(neededPathPatterns).some(
+      (key) =>
+        this.config[key as keyof Config] === true &&
+        neededPathPatterns[key].test(fileName),
+    );
+  }
+
+  // Turn keyword matches into the smallest set of directories that covers them,
+  // so we run one dump per folder instead of one per file.
+  discoverPatternDirectories(): string[] {
+    const directories = new Set<string>();
+
+    for (const key of Object.keys(neededPathPatterns)) {
+      if (this.config[key as keyof Config] !== true) continue;
+
+      const pattern = neededPathPatterns[key];
+      const matches = this.vpkDir.files.filter((f: string) => pattern.test(f));
+
+      if (matches.length === 0) {
+        this.log.warn(
+          `No VPK files matched ${key} (${pattern}). Check data/icon-manifest.txt for the current path.`,
+        );
+        continue;
+      }
+
+      for (const match of matches) {
+        directories.add(dirname(match));
+      }
+
+      this.log.info(
+        `${key}: ${matches.length} files across ${new Set(matches.map((m: string) => dirname(m))).size} directories`,
+      );
+    }
+
+    return [...directories];
+  }
+
   async dumpFiles() {
     try {
       // Find files matching patterns
@@ -229,11 +308,14 @@ class Cs2CDN extends EventEmitter {
         }
       }
 
+      this.writeIconManifest();
+
       const pathsToDump = Object.keys(neededDirectories)
         .filter((f) => this.config[f as keyof Config] === true)
         .map((f) => neededDirectories[f])
         .concat(Object.keys(neededFiles).map((f) => neededFiles[f]))
-        .concat(patternMatchedFiles);
+        .concat(patternMatchedFiles)
+        .concat(this.discoverPatternDirectories());
 
       const results = await Promise.all(
         pathsToDump.map(
@@ -416,7 +498,8 @@ class Cs2CDN extends EventEmitter {
       if (
         dirs.some((dir) => fileName.startsWith(dir)) ||
         fileLookup[fileName] ||
-        neededFilePatterns.some((pattern) => pattern.test(fileName))
+        neededFilePatterns.some((pattern) => pattern.test(fileName)) ||
+        this.matchesEnabledPathPattern(fileName)
       ) {
         const archiveIndex = this.vpkDir.tree[fileName].archiveIndex;
         if (!requiredIndices[archiveIndex]) {
