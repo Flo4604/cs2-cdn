@@ -92,6 +92,18 @@ jobs:
           S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
         run: |
           s5cmd sync --delete './data/panorama/images/econ/*' 's3://cs2cdn/econ/'
+          # Private rank (icons/xp), commendation and Premier rank icons live
+          # under panorama/images/icons, not under econ. The CDN root maps to
+          # data/panorama/images, so these belong at s3://cs2cdn/icons/ and are
+          # served as https://cs2cdn.com/icons/xp/level5.png.
+          # This sync omits --delete on purpose. Valve moves these folders
+          # between releases, so a run can extract one family and miss another.
+          # A stale icon at an old path is harmless; deleting a live one is not.
+          if [ -n "$(find ./data/panorama/images/icons -type f -print -quit 2>/dev/null)" ]; then
+            s5cmd sync './data/panorama/images/icons/*' 's3://cs2cdn/icons/'
+          else
+            echo "::warning::No files under data/panorama/images/icons. Skipped the icons sync. Check data/icon-manifest.txt for the current VPK paths."
+          fi
 
       - name: Analyze disk space usage
         run: |
@@ -109,7 +121,7 @@ jobs:
           echo "Disk space before cleanup:"
           df -h
           # Remove extracted panorama images (already synced to S3)
-          rm -rf data/panorama/images/econ/*
+          rm -rf data/panorama/images/econ/* data/panorama/images/icons/*
           echo "Disk space after cleanup:"
           df -h
 
