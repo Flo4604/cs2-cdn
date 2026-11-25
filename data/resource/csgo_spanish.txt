@@ -40731,6 +40731,7 @@ La predicción del daño puede mejorar la respuesta de los disparos de forma sig
 		"major_hub_store_title_event" 	"Tienda del Major {s:tournament_name}"
 		"major_hub_store_title_hud_store" 	"Centro de contenido y tienda del Major {s:tournament_name}"
 		"major_hub_store_desc" 	"Consigue las pegatinas de tus equipos y jugadores favoritos"
+		"major_hub_store_finish_prices_v"	"Dorada {d:price_red} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>, holográfica {d:price_pink} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>, reflectante {d:price_purp} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/> y normal {d:price_blue} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>"
 		"major_hub_store_desc_2" 	"Ya disponibles: pegatinas de los campeones y colgantes de momentos destacados"
 		"major_hub_store_desc_3" 	"Pegatinas con clasificaciones"
 		"major_hub_make_souvenir_title"  "Crear souvenirs"

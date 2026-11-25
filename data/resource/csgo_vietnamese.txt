@@ -45837,6 +45837,8 @@
 		"SFUI_Settings_AOProxy"				"Hấp sáng môi trường"
 		"SFUI_Settings_AOProxy_Info"		"Tính toán ánh sáng bằng 'Hấp sáng môi trường'.  Bật 'Hấp sáng môi trường' có thể làm giảm hiệu suất đồ họa."
 		"SFUI_Settings_Parallax"			"Sơ đồ che khuất thị sai (POM)"
+		"SFUI_Settings_Parallax_Info"		"Tạo độ sâu chân thực cho một số bề mặt (vd: tuyết).  Bật tính năng này có thể làm giảm hiệu suất đồ họa."
+
 		"SFUI_Settings_FSR"					"FidelityFX Super Resolution"
 		"SFUI_Settings_FSR_Info"			"FidelityFX Super Resolution có thể cải thiện hiệu suất bằng cách dựng hình với độ phân giải thấp hơn rồi nâng cao lên bằng cách sử dụng kỹ thuật không gian chất lượng cao."
 		"SFUI_Settings_FSR_Disabled"		"Tắt (Chất lượng cao nhất)"

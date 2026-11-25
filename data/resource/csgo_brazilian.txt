@@ -40733,6 +40733,7 @@
 		"major_hub_store_title_event" 	"Loja do Mundial {s:tournament_name}"
 		"major_hub_store_title_hud_store" 	"Central e Loja do Mundial {s:tournament_name}"
 		"major_hub_store_desc" 	"Obtenha adesivos das suas equipes e jogadores favoritos"
+		"major_hub_store_finish_prices_v"	"Dourado: {d:price_red} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/ Holográfico: {d:price_pink} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/> Brilhante: {d:price_purp} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/> Papel: {d:price_blue} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>"
 		"major_hub_store_desc_2" 	"Já disponíveis: adesivos dos campeões e chaveiros de destaque"
 		"major_hub_store_desc_3" 	"Adesivos de Classificação"
 		"major_hub_make_souvenir_title"  "Criar Lembranças"

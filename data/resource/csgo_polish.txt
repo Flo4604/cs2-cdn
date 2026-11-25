@@ -40730,6 +40730,7 @@
 		"major_hub_store_title_event" 	"Sklep Wielkich Mistrzostw {s:tournament_name}"
 		"major_hub_store_title_hud_store" 	"Centrum i sklep Wielkich Mistrzostw {s:tournament_name}"
 		"major_hub_store_desc" 	"Zdobądź swoje ulubione naklejki drużyn i z autografami graczy"
+		"major_hub_store_finish_prices_v"	"Złota {d:price_red} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>, holograficzna {d:price_pink} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>, foliowana {d:price_purp} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/> i papierowa {d:price_blue} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>"
 		"major_hub_store_desc_2" 	"Już dostępne – naklejki mistrzów i przywieszki z zagraniami"
 		"major_hub_store_desc_3" 	"Naklejki z serii rankingowej"
 		"major_hub_make_souvenir_title"  "Wytwórz pamiątki"

@@ -41543,6 +41543,7 @@
 		"major_hub_store_title_event" 	"{s:tournament_name} 特級錦標賽商店"
 		"major_hub_store_title_hud_store" 	"{s:tournament_name} 特級錦標賽中心與商店"
 		"major_hub_store_desc" 	"獲取您喜愛的隊伍和選手的簽名貼紙"
+		"major_hub_store_finish_prices_v"	"黃金 {d:price_red} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>、彩光 {d:price_pink} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>、閃亮 {d:price_purp} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/> 及紙質 {d:price_blue} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>"
 		"major_hub_store_desc_2" 	"現已推出 - 冠軍貼紙和精彩片段吊飾"
 		"major_hub_store_desc_3" 	"排名系列貼紙"
 		"major_hub_make_souvenir_title"  "製作紀念品"
@@ -43982,6 +43983,9 @@
 
 		"SFUI_Settings_AOProxy"				"環境遮蔽"
 		"SFUI_Settings_AOProxy_Info"		"使用「環境遮蔽」計算燈光。啟用「環境遮蔽」可能會降低影像效能。"
+		"SFUI_Settings_Parallax"			"視差遮擋貼圖"
+		"SFUI_Settings_Parallax_Info"		"提供給雪地等部分表面具真實感的深度。啟用可能會降低圖像效能。"
+
 		"SFUI_Settings_FSR"					"FidelityFX Super Resolution"
 		"SFUI_Settings_FSR_Info"			"「FidelityFX Super Resolution」可透過使用較低解析度彩現以改善效能，並使用高品質的空間技術進行升級。"
 		"SFUI_Settings_FSR_Disabled"		"已停用（最高品質）"

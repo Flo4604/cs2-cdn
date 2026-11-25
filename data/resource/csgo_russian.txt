@@ -49009,7 +49009,7 @@
 		"tournament_active_popup_desc" "У вас есть неактивированные жетоны. Активировав жетон, вы сможете обменять его на сувенирный набор турнира."
 
 		"tournament_coin_show_your_support" "Покажите свою поддержку"
-		"tournament_coin_team_graffiti_popup_title"		"Выбрать граффити команды"
+		"tournament_coin_team_graffiti_popup_title"		"Выберите граффити команды"
 		"tournament_coin_completed_challenges_int"	"Пройдено испытаний: <b>{d:challenges}</b>"
 		"tournament_items_not_released_h"		"Предмет в этом сувенирном наборе содержит брелок с ярким моментом из этого матча. Сувенирные наборы с яркими моментами выйдут после окончания турнира."
 		"tournament_items_not_released_1"		"Эти предметы имеют автографы чемпионов, отчего будут доступны после завершения мейджора."

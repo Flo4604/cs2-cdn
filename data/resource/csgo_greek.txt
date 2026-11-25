@@ -41937,6 +41937,7 @@
 		"major_hub_store_title_event" 	"{s:tournament_name} – Κατάστημα Major"
 		"major_hub_store_title_hud_store" 	"Κέντρο και κατάστημα του Major {s:tournament_name}"
 		"major_hub_store_desc" 	"Αποκτήστε αυτοκόλλητα με αυτόγραφα των αγαπημένων σας ομάδων και παικτών"
+		"major_hub_store_finish_prices_v"	"Χρυσό {d:price_red} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>, Ολογραφικό {d:price_pink} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>, Μεταλλικό {d:price_purp} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/> και Χάρτινο {d:price_blue} <img src='file://{images}/icons/ui/major_coin.svg' class='inline-coin-icon'/>"
 		"major_hub_store_desc_2" 	"Τώρα διαθέσιμα – Αυτοκόλλητα πρωταθλητών και γούρια καλύτερων στιγμών"
 		"major_hub_store_desc_3" 	"Η Σειρά Αυτοκόλλητων Ranked"
 		"major_hub_make_souvenir_title"  "Δημιουργία Σουβενίρ"
